@@ -16,7 +16,7 @@ spec:
       containers:
       - name: chroma
         image: chromadb/chroma:0.4.24   # 🔥 stable version
-        command: ["chroma", "run", "--host", "0.0.0.0", "--port", "8000"]
+        
         ports:
         - containerPort: 8000
         env:
