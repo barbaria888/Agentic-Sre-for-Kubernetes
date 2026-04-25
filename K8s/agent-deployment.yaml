@@ -17,5 +17,16 @@ spec:
       - name: agent
         image: hardik0811/sre-agent:latest
         imagePullPolicy: Always
+
         ports:
         - containerPort: 8000
+
+        env:
+        - name: CHROMA_HOST
+          value: "chroma"
+
+        - name: CHROMA_PORT
+          value: "8000"
+
+        - name: OLLAMA_HOST
+          value: "ollama"
