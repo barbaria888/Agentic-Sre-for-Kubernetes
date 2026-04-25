@@ -16,5 +16,6 @@ spec:
       containers:
       - name: agent
         image: hardik0811/sre-agent:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
