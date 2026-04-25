@@ -1,5 +1,5 @@
 langchain
-openclaw
+langchain-community
 kubernetes
 requests
 fastapi

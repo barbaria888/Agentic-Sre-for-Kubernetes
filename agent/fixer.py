@@ -8,7 +8,7 @@ def detect_issue(pod):
     bad_states = ["CrashLoopBackOff", "Error", "Failed", "Pending"]
     return pod["status"] in bad_states
 
-def fix_issue(pod):
+def fix_issue(pod, suggestion="restart"):
     name = pod["name"]
     issue = pod["status"]
 
@@ -17,7 +17,7 @@ def fix_issue(pod):
 
     logs = get_logs(name)
 
-    if "CrashLoopBackOff" in logs or "Error" in logs:
+    if suggestion.strip().lower().startswith("restart"):
         deploy = name.split("-")[0]
         restart_count[name] = restart_count.get(name, 0) + 1
 
