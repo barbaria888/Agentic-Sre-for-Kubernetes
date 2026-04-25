@@ -1,26 +1,37 @@
 import chromadb
 import time
 from chromadb.utils import embedding_functions
+from chromadb.config import Settings
 
-# lazy init (DO NOT connect at import time)
 client = None
 collection = None
 
 
-def get_client():
+def get_collection():
     global client, collection
 
-    if client:
+    if collection:
         return collection
 
-    embedding_func = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
-    )
-
-    for i in range(15):
+    for i in range(30):
         try:
             print(f"⏳ Connecting to Chroma... attempt {i+1}")
-            client = chromadb.HttpClient(host="chroma", port=8000)
+
+            client = chromadb.HttpClient(
+                host="chroma",
+                port=8000,
+                settings=Settings(
+                    anonymized_telemetry=False
+                )
+            )
+
+            # ✅ critical fix
+            client.heartbeat()
+
+            # load embedding ONLY after connection works
+            embedding_func = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="all-MiniLM-L6-v2"
+            )
 
             collection = client.get_or_create_collection(
                 name="sre-memory",
@@ -31,47 +42,52 @@ def get_client():
             return collection
 
         except Exception as e:
-            print("❌ Chroma not ready, retrying...")
+            print("❌ Retry:", e)
             time.sleep(3)
 
     raise Exception("Chroma connection failed after retries")
 
 
 def store_incident(pod, issue, action, result, score):
-    col = get_client()
+    try:
+        col = get_collection()
 
-    doc = f"""
-    Pod: {pod['name']}
-    Namespace: {pod['namespace']}
-    Issue: {issue}
-    Action: {action}
-    Result: {result}
-    Score: {score}
-    """
+        doc = f"""
+        Pod: {pod['name']}
+        Namespace: {pod['namespace']}
+        Issue: {issue}
+        Action: {action}
+        Result: {result}
+        Score: {score}
+        """
 
-    col.add(
-        documents=[doc],
-        metadatas=[{"score": score}],
-        ids=[f"{pod['name']}-{time.time()}"]
-    )
+        col.add(
+            documents=[doc],
+            metadatas=[{"score": score}],
+            ids=[f"{pod['name']}-{int(time.time())}"]
+        )
+
+    except Exception as e:
+        print("⚠️ Memory store failed:", e)
 
 
 def search_similar(issue, k=5):
-    col = get_client()
+    try:
+        col = get_collection()
 
-    res = col.query(
-        query_texts=[issue],
-        n_results=k
-    )
+        res = col.query(
+            query_texts=[issue],
+            n_results=k
+        )
 
-    docs = res.get("documents", [[]])[0]
-    metas = res.get("metadatas", [[]])[0]
+        docs = res.get("documents", [[]])[0]
+        metas = res.get("metadatas", [[]])[0]
 
-    enriched = []
-    for d, m in zip(docs, metas):
-        enriched.append({
-            "text": d,
-            "score": m.get("score", 0)
-        })
+        return [
+            {"text": d, "score": m.get("score", 0)}
+            for d, m in zip(docs, metas)
+        ]
 
-    return enriched
+    except Exception as e:
+        print("⚠️ Memory search failed:", e)
+        return []
