@@ -4,3 +4,5 @@ kubernetes
 requests
 fastapi
 uvicorn
+chromadb
+sentence-transformers
