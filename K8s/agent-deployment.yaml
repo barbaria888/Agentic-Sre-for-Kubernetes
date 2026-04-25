@@ -15,6 +15,6 @@ spec:
       serviceAccountName: agent-sa
       containers:
       - name: agent
-        image: hardik0811arora/ai-agent:latest
+        image: hardik0811/sre-agent:latest
         ports:
         - containerPort: 8000
