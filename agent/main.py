@@ -1,10 +1,14 @@
 from watcher import watch_pods
 from fixer import detect_issue, fix_issue
 from memory import search_similar
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 import time
 
-llm = Ollama(base_url="http://ollama:11434", model="gemma:2b")
+# 🔥 Use new Ollama integration
+llm = OllamaLLM(
+    base_url="http://ollama:11434",
+    model="gemma:2b"
+)
 
 
 def format_memory(memories):
@@ -24,6 +28,7 @@ def clean_decision(text):
         return "restart"
     elif "ignore" in text:
         return "ignore"
+
     return "ignore"
 
 
@@ -48,26 +53,31 @@ def analyze_with_llm(pod):
     """
 
     response = llm.invoke(prompt)
-
     return clean_decision(response)
 
 
 def run_loop():
     print("🚀 Auto-remediation agent started...")
 
-    for pod in watch_pods():
-        print(f"\n⚠️ Detected: {pod}")
+    while True:  # 🔥 critical fix (keeps agent alive)
+        try:
+            for pod in watch_pods():
+                print(f"\n⚠️ Detected: {pod}")
 
-        if detect_issue(pod):
-            print("🔍 Analyzing...")
-            suggestion = analyze_with_llm(pod)
-            print("🧠 Decision:", suggestion)
+                if detect_issue(pod):
+                    print("🔍 Analyzing...")
+                    suggestion = analyze_with_llm(pod)
+                    print("🧠 Decision:", suggestion)
 
-            print("🛠 Fixing...")
-            result = fix_issue(pod, suggestion)
-            print("✅ Result:", result)
+                    print("🛠 Fixing...")
+                    result = fix_issue(pod, suggestion)
+                    print("✅ Result:", result)
 
-        time.sleep(2)
+            time.sleep(5)
+
+        except Exception as e:
+            print("❌ Loop error:", str(e))
+            time.sleep(5)  # prevent crash loop
 
 
 if __name__ == "__main__":
