@@ -6,8 +6,20 @@ import time
 
 llm = Ollama(base_url="http://ollama:11434", model="gemma:2b")
 
+def format_memory(memories):
+    # 🔥 prioritize good outcomes
+    sorted_mem = sorted(memories, key=lambda x: x["score"], reverse=True)
+
+    text = ""
+    for m in sorted_mem:
+        text += f"\nScore: {m['score']}\n{m['text']}\n"
+
+    return text
+
 def analyze_with_llm(pod):
-    similar = search_similar(pod["status"])
+    memories = search_similar(pod["status"])
+
+    context = format_memory(memories)
 
     prompt = f"""
     You are an SRE agent.
@@ -15,8 +27,11 @@ def analyze_with_llm(pod):
     Current issue:
     Pod {pod['name']} in {pod['namespace']} is {pod['status']}
 
-    Similar past incidents:
-    {similar}
+    Past incidents (higher score = better outcome):
+    {context}
+
+    Prefer actions with HIGH score.
+    Avoid actions with NEGATIVE score.
 
     Respond with ONE word:
     restart | ignore
@@ -25,7 +40,7 @@ def analyze_with_llm(pod):
     return llm(prompt)
 
 def run_loop():
-    print(" Auto-remediation agent started...")
+    print("🚀 Auto-remediation agent started...")
 
     for pod in watch_pods():
         print(f"\n⚠️ Detected: {pod}")
