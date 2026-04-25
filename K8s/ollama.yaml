@@ -17,12 +17,29 @@ spec:
         image: ollama/ollama
         ports:
         - containerPort: 11434
+        env:
+        - name: OLLAMA_KEEP_ALIVE
+          value: "24h"
+        # We use a lifecycle hook or simple serve; 
+        # pulling via a separate job or initContainer is cleaner.
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          ollama serve & 
+          sleep 10 && ollama pull gemma:2b && wait
+        volumeMounts:
+        - name: data
+          mountPath: /root/.ollama
+      volumes:
+      - name: data
+        emptyDir: {} # Swap this for a PVC for real persistence
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: ollama
 spec:
+  type: ClusterIP
   selector:
     app: ollama
   ports:
