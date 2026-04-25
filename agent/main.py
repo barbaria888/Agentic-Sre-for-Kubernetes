@@ -1,16 +1,27 @@
 from watcher import watch_pods
 from fixer import detect_issue, fix_issue
+from memory import search_similar
 from langchain.llms import Ollama
 import time
 
 llm = Ollama(base_url="http://ollama:11434", model="gemma:2b")
 
 def analyze_with_llm(pod):
+    similar = search_similar(pod["status"])
+
     prompt = f"""
     You are an SRE agent.
-    Pod {pod['name']} in namespace {pod['namespace']} is in state {pod['status']}.
-    Suggest a simple safe fix in one short line.
+
+    Current issue:
+    Pod {pod['name']} in {pod['namespace']} is {pod['status']}
+
+    Similar past incidents:
+    {similar}
+
+    Respond with ONE word:
+    restart | ignore
     """
+
     return llm(prompt)
 
 def run_loop():
