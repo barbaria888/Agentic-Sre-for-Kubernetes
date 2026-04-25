@@ -1,7 +1,7 @@
 from watcher import watch_pods
 from fixer import detect_issue, fix_issue
 from memory import search_similar
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
 import time
 
 llm = Ollama(base_url="http://ollama:11434", model="gemma:2b")
@@ -51,7 +51,7 @@ def run_loop():
             print("🧠 Suggestion:", suggestion)
 
             print("🛠 Fixing...")
-            result = fix_issue(pod)
+            result = fix_issue(pod, suggestion)
             print("✅ Result:", result)
 
         time.sleep(2)
