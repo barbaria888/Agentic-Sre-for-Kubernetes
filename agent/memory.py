@@ -42,7 +42,7 @@ def get_collection():
             return collection
 
         except Exception as e:
-            print("❌ Retry:", e)
+            print(f"❌ Chroma error type: {type(e).__name__} | {str(e)}")
             time.sleep(3)
 
     raise Exception("Chroma connection failed after retries")
