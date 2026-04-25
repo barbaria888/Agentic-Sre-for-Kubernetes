@@ -2,9 +2,7 @@ from watcher import watch_pods
 from fixer import detect_issue, fix_issue
 from memory import search_similar
 from langchain_ollama import OllamaLLM
-import time
 
-# 🔥 Use new Ollama integration
 llm = OllamaLLM(
     base_url="http://ollama:11434",
     model="gemma:2b"
@@ -12,73 +10,63 @@ llm = OllamaLLM(
 
 
 def format_memory(memories):
-    sorted_mem = sorted(memories, key=lambda x: x["score"], reverse=True)
-
-    text = ""
-    for m in sorted_mem:
-        text += f"\nScore: {m['score']}\n{m['text']}\n"
-
-    return text
+    memories = sorted(memories, key=lambda x: x["score"], reverse=True)
+    return "\n".join([f"{m['score']}: {m['text']}" for m in memories])
 
 
 def clean_decision(text):
-    text = text.lower().strip()
+    text = text.lower()
 
     if "restart" in text:
         return "restart"
-    elif "ignore" in text:
-        return "ignore"
-
     return "ignore"
 
 
-def analyze_with_llm(pod):
+def analyze(pod):
     memories = search_similar(pod["status"])
     context = format_memory(memories)
 
     prompt = f"""
-    You are an SRE agent.
+You are a Kubernetes SRE agent.
 
-    Current issue:
-    Pod {pod['name']} in {pod['namespace']} is {pod['status']}
+Pod: {pod['name']}
+Namespace: {pod['namespace']}
+Status: {pod['status']}
 
-    Past incidents (higher score = better outcome):
-    {context}
+Past incidents:
+{context}
 
-    Prefer actions with HIGH score.
-    Avoid actions with NEGATIVE score.
+Return ONLY: restart or ignore
+"""
 
-    Respond with ONE word only:
-    restart OR ignore
-    """
-
-    response = llm.invoke(prompt)
-    return clean_decision(response)
+    try:
+        response = llm.invoke(prompt)
+        return clean_decision(response)
+    except Exception as e:
+        print("LLM error:", e)
+        return "ignore"
 
 
 def run_loop():
-    print("🚀 Auto-remediation agent started...")
+    print("🚀 AI SRE Agent started")
 
-    while True:  # 🔥 critical fix (keeps agent alive)
-        try:
-            for pod in watch_pods():
-                print(f"\n⚠️ Detected: {pod}")
+    seen = set()
 
-                if detect_issue(pod):
-                    print("🔍 Analyzing...")
-                    suggestion = analyze_with_llm(pod)
-                    print("🧠 Decision:", suggestion)
+    for pod in watch_pods():
+        key = f"{pod['namespace']}/{pod['name']}"
 
-                    print("🛠 Fixing...")
-                    result = fix_issue(pod, suggestion)
-                    print("✅ Result:", result)
+        if key in seen:
+            continue
 
-            time.sleep(5)
+        seen.add(key)
 
-        except Exception as e:
-            print("❌ Loop error:", str(e))
-            time.sleep(5)  # prevent crash loop
+        print(f"\n⚠️ Event: {pod}")
 
+        if detect_issue(pod):
+            print("🔍 analyzing...")
+            decision = analyze(pod)
+            print("🧠 decision:", decision)
 
-if __name__ == "__main__":
-    run_loop()
+            print("🛠 executing...")
+            result = fix_issue(pod, decision)
+            print("✅ result:", result)
