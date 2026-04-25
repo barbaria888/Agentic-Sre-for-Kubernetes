@@ -240,20 +240,14 @@ Chroma may not be ready when agent starts → retry logic required
 * Replace kubectl with Kubernetes Python client
 
 ---
+👨‍💻 Purpose of this project
 
-## 👨‍💻 Purpose of this project
+This is a cloud-native learning system, built to explore:
 
-This is a **cloud-native learning system**, built to explore:
-
-* AI in DevOps workflows
-* Kubernetes automation patterns
-* LLM-driven decision systems
-* Self-healing infrastructure concepts
-
+AI in DevOps workflows
+Kubernetes automation patterns
+LLM-driven decision systems (Gemma via Ollama)
+Self-healing infrastructure concepts
+Vector database–powered incident memory (ChromaDB)
+AI inference pipelines inside Kubernetes environments
 ---
-
-If you want next upgrade, I can help you make this insane:
-
-* 🔥 add architecture diagram as **real PNG (downloadable)**
-* 📊 make it **portfolio-ready case study (LinkedIn/GitHub viral)**
-* 🚀 or convert into **resume bullet points that get SRE interviews**
