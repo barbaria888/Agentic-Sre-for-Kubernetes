@@ -1,5 +1,6 @@
 from tools import get_logs, restart_deploy
 from memory import store_incident
+from evaluator import evaluate_result
 
 restart_count = {}
 
@@ -22,10 +23,12 @@ def fix_issue(pod):
 
         result = restart_deploy(deploy)
 
-        # ✅ store in vector DB
-        store_incident(pod, issue, "restart", result)
+        score = evaluate_result(result)
+
+        # 🧠 store with score
+        store_incident(pod, issue, "restart", result, score)
 
         return result
 
-    store_incident(pod, issue, "none", "no_action")
+    store_incident(pod, issue, "none", "no_action", 0)
     return "ℹ️ No action taken"
