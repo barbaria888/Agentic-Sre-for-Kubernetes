@@ -18,6 +18,18 @@ spec:
         image: chromadb/chroma
         ports:
         - containerPort: 8000
+        env:
+        - name: PORT
+          value: "8000"
+        - name: IS_PERSISTENT
+          value: "FALSE"
+        volumeMounts:
+        - name: chroma-data
+          mountPath: /chroma/.chroma
+      volumes:
+      - name: chroma-data
+        emptyDir: {}
+
 ---
 apiVersion: v1
 kind: Service
@@ -27,5 +39,5 @@ spec:
   selector:
     app: chroma
   ports:
-    - port: 8000
-      targetPort: 8000
+  - port: 8000
+    targetPort: 8000
