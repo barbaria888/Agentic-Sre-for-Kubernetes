@@ -1,0 +1,26 @@
+name: Build and Push Agent
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: hardik0811
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build Docker image
+      run: |
+        docker build -t hardik0811/sre-agent:latest ./agent
+
+    - name: Push Docker image
+      run: |
+        docker push hardik0811/sre-agent:latest
